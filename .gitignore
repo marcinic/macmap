@@ -1,0 +1,9 @@
+# Data formats #
+################
+*.txt
+*.7z
+*.zip
+*.sas7bdat
+*.csv
+*.xls
+*.xlsx
