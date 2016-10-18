@@ -20,17 +20,23 @@ def get(url):
 	"""
 		Returns a list of rows formatted as dictionaries from UNCTAD interface
 	"""
-	page_size = get_page_size(url)
-	url = url.replace("100",page_size)
-	res = requests.get(url)
-	
-	soup = BeautifulSoup(res.text,"html.parser")
-	scripts = soup.find_all("script")
-	p = re.search("(localdata: \[)(.*)",scripts[7].text)
-	data = p.group(2)
-	
-	row_strings = [s+"," for s in data.split("},")]
-	rows = parse_row_strings(row_strings)
+	rows = []
+	try:
+		page_size = get_page_size(url)
+		url = url.replace("100",page_size)
+		res = requests.get(url)
+		
+		soup = BeautifulSoup(res.text,"html.parser")
+		scripts = soup.find_all("script")
+		p = re.search("(localdata: \[)(.*)",scripts[7].text)
+		data = p.group(2)
+		
+		row_strings = [s+"," for s in data.split("},")]
+		rows = parse_row_strings(row_strings)
+	except IndexError:
+		traceback.print_exc()
+	except AttributeError:
+		traceback.print_exc()
 	return rows
 
 def get_available_data():
@@ -78,17 +84,25 @@ def get_page_size(url):
 	except AttributeError:
 		traceback.print_exc()
 	return page_size
-	
 
+def main(urls,output_dir):	
+	output_dir = "D:/Users/cmarciniak/Documents/macmap/data/unctad/specific/"
+	for url in urls:
+		print(url)
+		iso3_code = re.search("[A-Z]{3}",url).group(0)
+		year = re.search("[0-9]{4}",url).group(0)
+		res = get(url)
+		if(res==[]):
+			print("No data found at "+url)
+		else:
+			data = pd.DataFrame(res)
+			data['Year'] = year
+			data['ISO3Code'] = iso3_code
+			out_file = os.path.join(output_dir,iso3_code+year+".csv")
+			data.to_csv(out_file)
+			
 if __name__=="__main__":
 	output_dir = "D:/Users/cmarciniak/Documents/macmap/data/unctad/specific/"
 	urls = get_available_data()
-	for url in urls:
-		iso3_code = re.search("[A-Z]{3}",url).group(0)
-		year = re.search("[0-9]{4}",url).group(0)
-		data = pd.DataFrame(get(url))
-		data['Year'] = year
-		data['ISO3Code'] = iso3_code
-		out_file = os.path.join(output_dir,iso3_code+year+".csv")
-		data.to_csv(out_file)
-	
+	main(urls,output_dir)
+		
