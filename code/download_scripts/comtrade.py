@@ -34,7 +34,8 @@ def main():
 	output_dir = "D:/Users/cmarciniak/Documents/macmap/data/comtrade"
 	f = open("comtrade_token.txt")
 	token = f.read()
-	years = [str(year) for year in range(1995,2015)]
+	#years = [str(year) for year in range(1995,2015)]
+	years = ["2015"]
 	for year in years:
 		url = make_url("C","A",year,"ALL","HS",token)
 		res = requests.get(url)
