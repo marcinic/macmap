@@ -21,11 +21,6 @@ def init_db():
 	engine.execute("CREATE DATABASE comtrade")
 	engine.execute("ALTER DATABASE comtrade CHARACTER SET utf8 COLLATE utf8_unicode_ci")
 
-def format_table(engine,table_name):
-	q1 = "ALTER TABLE :tn change `commodity_code` `commodity_code` VARCHAR(6)"	
-	q1 = "ALTER TABLE :tn PARTITION BY KEY(commodity_code)"
-	engine.execute(q1,tn=table_name)
-	engine.execute(q2,tn=table_name)
 	
 def get_inputs(data_dir):
 	files = os.listdir(data_dir)
@@ -73,6 +68,10 @@ def load_to_sql(file):
 	except UnicodeEncodeError:
 		print("Unicode error at "+table_name)
 		traceback.print_exc()
+		
+def comtrade_data():
+	inputs = get_inputs(data_dir)
+	load_to_sql(inputs[1])
 """
 conn.execute(text("ALTER TABLE DROP INDEX first from cmtrd95"))	
 conn.execute(text("ALTER TABLE cmtrd95 MODIFY `reporter_code` INTEGER")) # maybe faster to modify them before insert
@@ -86,9 +85,9 @@ if __name__=="__main__":
 	inputs = get_inputs(data_dir)
 	#for input in inputs:
 	#	load_to_sql(input)
-	load_to_sql(inputs[3])
+	load_to_sql(inputs[1])
 	#load_to_sql(inputs[0])
 	#p = Pool(threads)
 	#p.map(load_to_sql,inputs)
 	end = time.time()
-	print(str(end-start)+" seconds elapsed")
+	print(str((end-start)/60)+" minutes elapsed")
