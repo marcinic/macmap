@@ -60,17 +60,14 @@ class ConversionFactors(Base):
 		Column('kg_per_unit',Float, default=ratio)		
 	)
 
-table_list = ["comtradehs"+str(i) for i in range(1995,2015)]
-print(table_list)	
-table_dictionary = dict(zip(table_list,list(range(0,20))))
-print(table_dictionary)
 
-def whitelist(tablename):
+def whitelist(tablename,table_list):
+	table_dictionary = dict(zip(table_list,list(range(0,20))))
 	return table_dictionary[tablename]
 
-def drop_index(tablename,engine):
+def drop_index(tablename,table_list,engine):
 	try:
-		whitelist(tablename)
+		whitelist(tablename,table_list)
 		query1 = "ALTER TABLE {0} MODIFY id INT".format(tablename)
 		query2 = "ALTER TABLE {0} DROP PRIMARY KEY".format(tablename)
 		engine.execute(query1)
@@ -81,13 +78,16 @@ def drop_index(tablename,engine):
 		print("table name "+tablename+" is not valid")
 
 
-for table in table_list:
-	create_comtrade(table)
-	
-	
-Base.metadata.create_all(conn)
-	
-
-
-for table in table_list:
-	drop_index(table,conn)
+		
+def main():
+	table_list = ["comtradehs"+str(i) for i in range(1995,2015)]
+	for table in table_list:
+		create_comtrade(table)
+	Base.metadata.create_all(conn)
+	table_list.append("conversion_factors")
+	for table in table_list:
+		drop_index(table,table_list,conn)
+		
+		
+if __name__=="__main__":	
+	main()

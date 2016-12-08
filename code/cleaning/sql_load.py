@@ -85,7 +85,7 @@ if __name__=="__main__":
 	inputs = get_inputs(data_dir)
 	#for input in inputs:
 	#	load_to_sql(input)
-	load_to_sql(inputs[1])
+	load_to_sql(inputs[0])
 	#load_to_sql(inputs[0])
 	#p = Pool(threads)
 	#p.map(load_to_sql,inputs)
