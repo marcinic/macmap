@@ -53,9 +53,11 @@ def load_to_sql(file):
 			
 			
 			
+			
 			col = list(map(fn,chunk.columns))
 			chunk.columns = col 
 			
+	
 			chunk.drop('trade_value_us',axis=1,inplace=True)
 			chunk.drop('qty',axis=1,inplace=True)
 			chunk.drop('period_desc.',axis=1,inplace=True)
@@ -85,7 +87,7 @@ if __name__=="__main__":
 	inputs = get_inputs(data_dir)
 	#for input in inputs:
 	#	load_to_sql(input)
-	load_to_sql(inputs[0])
+	load_to_sql(inputs[2])
 	#load_to_sql(inputs[0])
 	#p = Pool(threads)
 	#p.map(load_to_sql,inputs)

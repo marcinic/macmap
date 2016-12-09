@@ -33,6 +33,8 @@ def create_comtrade(tablename):
 			Column('netweight_kg',Float),
 			Column('quantity',Float),
 			Column('value',Float),
+			Column('unit_value',Float),
+			Column('est_kg',Float),
 			Index('commodity_index','commodity_code','reporter_code')
 		)
 	return Comtrade
