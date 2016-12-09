@@ -14,12 +14,11 @@ table_dictionary = dict(zip(table_list,list(range(0,20))))
 
 def unit_values(table,engine):
 	engine.execute("update {0} set unit_value = value/quantity where qty_unit_code=8".format(table))
-	engine.execute("update {0} set unit_value = value/netweight_kg where qty_unit_code!=8 and netweight_kg!=0 and netweight_kg is not null".format(table)
+	engine.execute("update {0} set unit_value = value/netweight_kg where qty_unit_code!=8 and netweight_kg!=0 and netweight_kg is not null".format(table))
 
 def conversion_factors(table,engine):
-	table_dictionary[table] #whitelist table name
+	table_dictionary[table] 
 	q = "SELECT DISTINCT commodity_code from {0}".format(table)
-	#conn.execute("update {0} set unit_value = value/quantity where qty_unit_code=8".format(table))
 	codes = list(pd.read_sql(q,conn)['commodity_code'])
 	query = """INSERT INTO conversion_factors SELECT t1.`commodity`,t1.commodity_code,t1.`reporter_code`,t2.reporter_code,t1.year,t1.`trade_flow` as tf1, t2.trade_flow as tf2,t1.qty_unit, t2.qty_unit,t1.quantity as q1,t2.quantity as q2, t1.quantity/t2.quantity as ratio
 	FROM {0} as t1, {0} as t2
@@ -45,7 +44,7 @@ def convert_to_kg(table,engine):
 	engine.execute("update {0} set unit_value = value/quantity*est_kg where unit_value is null and quantity is not null")
 
 
-def main():
+def calculate_unit_values():
 	for table in table_list:
 		unit_values(table,conn)
 		conversion_factors(table,conn)
