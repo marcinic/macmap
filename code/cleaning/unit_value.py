@@ -20,7 +20,7 @@ def conversion_factors(table,engine):
 	table_dictionary[table] 
 	q = "SELECT DISTINCT commodity_code from {0}".format(table)
 	codes = list(pd.read_sql(q,conn)['commodity_code'])
-	query = """INSERT INTO conversion_factors SELECT t1.`commodity`,t1.commodity_code,t1.`reporter_code`,t2.reporter_code,t1.year,t1.`trade_flow` as tf1, t2.trade_flow as tf2,t1.qty_unit, t2.qty_unit,t1.quantity as q1,t2.quantity as q2, t1.quantity/t2.quantity as ratio
+	query = """INSERT INTO conversion_factors SELECT t1.`commodity`,t1.commodity_code,t1.`reporter_code`,t2.reporter_code,t1.year,t1.classification,t1.`trade_flow` as tf1, t2.trade_flow as tf2,t1.qty_unit, t2.qty_unit,t1.quantity as q1,t2.quantity as q2, t1.quantity/t2.quantity as ratio
 	FROM {0} as t1, {0} as t2
 	WHERE t1.commodity_code=%s
 	AND t1.commodity_code=t2.commodity_code
@@ -34,23 +34,38 @@ def conversion_factors(table,engine):
 	for code in codes:
 		engine.execute(query,(code))
 
-def convert_to_kg(table,engine):
+def compute_average_weight(table,engine):
 	query = """UPDATE {0}, 
-	(select commodity_code, AVG(kg_per_unit) as avg_kg from conversion_factors group by commodity_code) as akg
+	(select commodity_code,classification, AVG(kg_per_unit) as avg_kg from conversion_factors group by commodity_code,classification) as akg
 	set est_kg = avg_kg
 	where {0}.commodity_code=akg.commodity_code
+	AND {0}.classification = akg.classification
 	AND {0}.qty_unit_code!=8""".replace("\n"," ").replace("\t"," ").format(table)
 	engine.execute(query)
-	engine.execute("update {0} set unit_value = value/quantity*est_kg where unit_value is null and quantity is not null")
+	engine.execute("update {0} set unit_value = value/(quantity*est_kg) where unit_value is null and quantity is not null".format(table))
 
+def compute_median_weight(table,engine):
+	q = "select commodity,commodity_code,kg_per_unit from conversion_factors"
+	data = pd.read_sql(q,engine)
+	med = data.groupby("commodity_code").median()
+	med['commodity_code'] = med.index
+	med_values = med.T.to_dict().values()
+	q = "UPDATE {0} set est_kg = :kg_per_unit where commodity_code=:commodity_code".format(table)
 
+	for val in med_values:
+		conn.execute(text(q),val)
+	engine.execute("update {0} set unit_value = value/(quantity*est_kg) where unit_value is null and quantity is not null".format(table))
+	
+	
 def calculate_unit_values():
 	for table in table_list:
 		unit_values(table,conn)
 		conversion_factors(table,conn)
-	
+		convert_to_kg(table,conn)
+		
 if __name__=="__main__":
-	table = "comtradehs1997"
+	table = "comtradehs1995"
 	unit_values(table,conn)
 	conversion_factors(table,conn)
+	compute_median_weight(table,conn)
 	

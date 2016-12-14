@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from odo import odo
 from multiprocessing import Pool
 from sqlalchemy.sql import text
-
+from nomenclature_conversion import convert
 
 chunk_size = 100000
 data_dir =  "D:/Users/cmarciniak/Documents/macmap/data/comtrade"
@@ -42,26 +42,22 @@ def load_to_sql(file):
 		for chunk in reader:
 			chunk = chunk[chunk.Partner!="World"]
 			chunk = chunk[chunk['Commodity Code']!='TOTAL'] # remove totals
+			chunk = chunk[chunk['Aggregate Level']=='6'] # remove subtotals
 			chunk['reporter_code'] = chunk['Reporter Code'].astype(int)
 			chunk['quantity'] = chunk.Qty.astype(float)
 			chunk['value'] = chunk['Trade Value (US$)'].astype(float)
 			chunk = chunk[chunk.quantity!=0] # remove zero trade flows
-			#chunk['Commodity Code'] = chunk['Commodity Code'].str.encode('ascii','ignore')
-			
-			#chunk['Reporter'] = chunk['Reporter'].str.encode('ascii','ignore')
-			#chunk['Partner'] = chunk['Partner'].str.encode('ascii','ignore')
-			
-			
-			
-			
+
+						
 			col = list(map(fn,chunk.columns))
 			chunk.columns = col 
 			
-	
+			
 			chunk.drop('trade_value_us',axis=1,inplace=True)
 			chunk.drop('qty',axis=1,inplace=True)
 			chunk.drop('period_desc.',axis=1,inplace=True)
-
+			
+			chunk['H3_commodity_code'] = convert(chunk)
 			
 			chunk = chunk.astype(object).where(pd.notnull(chunk), None)		
 			#odo(chunk,"mysql+pymysql://CMARCINIAK:ifpri360@localhost/comtrade::"+table_name )
@@ -87,7 +83,7 @@ if __name__=="__main__":
 	inputs = get_inputs(data_dir)
 	#for input in inputs:
 	#	load_to_sql(input)
-	load_to_sql(inputs[2])
+	load_to_sql(inputs[0])
 	#load_to_sql(inputs[0])
 	#p = Pool(threads)
 	#p.map(load_to_sql,inputs)

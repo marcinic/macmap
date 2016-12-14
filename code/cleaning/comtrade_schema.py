@@ -35,6 +35,7 @@ def create_comtrade(tablename):
 			Column('value',Float),
 			Column('unit_value',Float),
 			Column('est_kg',Float),
+			Column('H3_commodity_code',mysql.VARCHAR(6)),
 			Index('commodity_index','commodity_code','reporter_code')
 		)
 	return Comtrade
@@ -53,13 +54,14 @@ class ConversionFactors(Base):
 		Column('reporter_code',Integer),
 		Column('partner_code',Integer),
 		Column('year',Integer),
+		Column('classification',String(4)),
 		Column('trade_flow1',String(255)),
 		Column('trade_flow2',String(255)),
 		Column('quantity_unit1',String(255)),
 		Column('quantity_unit2',String(255)),
 		Column('quantity1',Float),
 		Column('quantity2',Float),
-		Column('kg_per_unit',Float, default=ratio)		
+		Column('kg_per_unit',Float, default=ratio)
 	)
 
 
@@ -86,10 +88,12 @@ def main():
 	for table in table_list:
 		create_comtrade(table)
 	Base.metadata.create_all(conn)
+	drop_index("conversion_factors",["conversion_factors"],conn)
+	conn.execute("ALTER TABLE conversion_factors DROP id")
 	table_list.append("conversion_factors")
 	for table in table_list:
 		drop_index(table,table_list,conn)
-		
+
 		
 if __name__=="__main__":	
 	main()
