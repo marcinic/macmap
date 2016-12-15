@@ -34,7 +34,7 @@ def create_comtrade(tablename):
 			Column('quantity',Float),
 			Column('value',Float),
 			Column('unit_value',Float),
-			Column('est_kg',Float),
+			Column('kg_conversion_factor',Float),
 			Column('H3_commodity_code',mysql.VARCHAR(6)),
 			Index('commodity_index','commodity_code','reporter_code')
 		)

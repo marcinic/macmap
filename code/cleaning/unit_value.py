@@ -1,8 +1,8 @@
 
 import sqlalchemy as sa
 import pandas as pd
-from sqlalchemy import text
-
+from sqlalchemy import Table,bindparam, and_, text
+from sqlalchemy.ext.declarative import declarative_base
 
 conn = sa.create_engine("mysql+pymysql://CMARCINIAK:ifpri360@localhost/comtrade?charset=utf8mb4")
 
@@ -44,27 +44,37 @@ def compute_average_weight(table,engine):
 	engine.execute(query)
 	engine.execute("update {0} set unit_value = value/(quantity*est_kg) where unit_value is null and quantity is not null".format(table))
 
-def compute_median_weight(table,engine):
+def compute_median_weight(tablename,engine):
 	q = "select commodity,commodity_code,kg_per_unit from conversion_factors"
 	data = pd.read_sql(q,engine)
 	med = data.groupby("commodity_code").median()
 	med['commodity_code'] = med.index
-	med_values = med.T.to_dict().values()
-	q = "UPDATE {0} set est_kg = :kg_per_unit where commodity_code=:commodity_code".format(table)
+	med_values = list(med.T.to_dict().values())
+	
+	Base = declarative_base()
+	table = Table(tablename,Base.metadata,autoload=True,autoload_with=engine)
+	
+	stmt = table.update()\
+	.where(
+    and_(table.c.commodity_code==bindparam("commodity_code"),
+         table.c.unit_value==None))\
+	.values({'commodity_code':bindparam('commodity_code'),
+        'est_kg': bindparam('kg_per_unit')
+        })
 
-	for val in med_values:
-		conn.execute(text(q),val)
-	engine.execute("update {0} set unit_value = value/(quantity*est_kg) where unit_value is null and quantity is not null".format(table))
+	conn.execute(stmt,med_values)
+	
+	engine.execute("update {0} set unit_value = value/(quantity*est_kg) where unit_value is null and quantity is not null".format(tablename))
 	
 	
 def calculate_unit_values():
 	for table in table_list:
 		unit_values(table,conn)
 		conversion_factors(table,conn)
-		convert_to_kg(table,conn)
+		compute_median_weight(table,conn)
 		
 if __name__=="__main__":
-	table = "comtradehs1995"
+	table = "comtradehs1997"
 	unit_values(table,conn)
 	conversion_factors(table,conn)
 	compute_median_weight(table,conn)
