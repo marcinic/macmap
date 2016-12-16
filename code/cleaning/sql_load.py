@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from odo import odo
 from multiprocessing import Pool
 from sqlalchemy.sql import text
-from nomenclature_conversion import convert
+#from nomenclature_conversion import convert
 
 chunk_size = 100000
 data_dir =  "D:/Users/cmarciniak/Documents/macmap/data/comtrade"
@@ -57,7 +57,7 @@ def load_to_sql(file):
 			chunk.drop('qty',axis=1,inplace=True)
 			chunk.drop('period_desc.',axis=1,inplace=True)
 			
-			chunk['H3_commodity_code'] = convert(chunk)
+			#chunk['H3_commodity_code'] = convert(chunk)
 			
 			chunk = chunk.astype(object).where(pd.notnull(chunk), None)		
 			#odo(chunk,"mysql+pymysql://CMARCINIAK:ifpri360@localhost/comtrade::"+table_name )
@@ -69,7 +69,8 @@ def load_to_sql(file):
 		
 def comtrade_data():
 	inputs = get_inputs(data_dir)
-	load_to_sql(inputs[1])
+	for input in inputs:
+		load_to_sql(input)
 """
 conn.execute(text("ALTER TABLE DROP INDEX first from cmtrd95"))	
 conn.execute(text("ALTER TABLE cmtrd95 MODIFY `reporter_code` INTEGER")) # maybe faster to modify them before insert
