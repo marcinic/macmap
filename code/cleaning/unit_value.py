@@ -45,10 +45,11 @@ def compute_average_weight(table,engine):
 	engine.execute("update {0} set unit_value = value/(quantity*est_kg) where unit_value is null and quantity is not null".format(table))
 
 def compute_median_weight(tablename,engine):
-	q = "select commodity,commodity_code,kg_per_unit from conversion_factors"
+	q = "select commodity,commodity_code,kg_per_unit,classification from conversion_factors"
 	data = pd.read_sql(q,engine)
-	med = data.groupby("commodity_code").median()
-	med['commodity_code'] = med.index
+	med = data.groupby(["classification","commodity_code"]).median()
+	med['b_classification'] = list(map(lambda x : x[0],list(med.index)))
+	med['b_commodity_code'] = list(map(lambda x : x[1],list(med.index)))
 	med_values = list(med.T.to_dict().values())
 	
 	Base = declarative_base()
@@ -56,15 +57,16 @@ def compute_median_weight(tablename,engine):
 	
 	stmt = table.update()\
 	.where(
-    and_(table.c.commodity_code==bindparam("commodity_code"),
+    and_(table.c.commodity_code==bindparam("b_commodity_code"),
+		table.c.classification==bindparam("b_classification"),
          table.c.unit_value==None))\
-	.values({'commodity_code':bindparam('commodity_code'),
-        'est_kg': bindparam('kg_per_unit')
+	.values({
+        'kg_conversion_factor': bindparam('kg_per_unit')
         })
 
 	conn.execute(stmt,med_values)
 	
-	engine.execute("update {0} set unit_value = value/(quantity*est_kg) where unit_value is null and quantity is not null".format(tablename))
+	engine.execute("update {0} set unit_value = value/(quantity*kg_conversion_factor) where unit_value is null and quantity is not null".format(tablename))
 	
 	
 def calculate_unit_values():
@@ -74,8 +76,8 @@ def calculate_unit_values():
 		compute_median_weight(table,conn)
 		
 if __name__=="__main__":
-	table = "comtradehs1997"
-	unit_values(table,conn)
-	conversion_factors(table,conn)
+	table = "comtradehs1995"
+	#unit_values(table,conn)
+	#conversion_factors(table,conn)
 	compute_median_weight(table,conn)
 	

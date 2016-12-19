@@ -12,7 +12,7 @@ from multiprocessing import Pool
 from sqlalchemy.sql import text
 #from nomenclature_conversion import convert
 
-chunk_size = 100000
+
 data_dir =  "D:/Users/cmarciniak/Documents/macmap/data/comtrade"
 
 
@@ -80,11 +80,11 @@ conn.execute(text("ALTER TABLE cmtrd95 PARTITION BY KEY(commodity_code)"),)
 """
 if __name__=="__main__":
 	start = time.time()
-	threads = multiprocessing.cpu_count()
+	#threads = multiprocessing.cpu_count()
 	inputs = get_inputs(data_dir)
-	#for input in inputs:
-	#	load_to_sql(input)
-	load_to_sql(inputs[2])
+	for input in inputs:
+		load_to_sql(input)
+	#load_to_sql(inputs[2])
 	#load_to_sql(inputs[0])
 	#p = Pool(threads)
 	#p.map(load_to_sql,inputs)
