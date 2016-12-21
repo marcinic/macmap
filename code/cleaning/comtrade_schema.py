@@ -1,6 +1,6 @@
 
 import sqlalchemy as sa
-from sqlalchemy import Column,Index,Float, Integer, String
+from sqlalchemy import Column,Index,Float, Integer, String,Text
 from sqlalchemy.dialects import mysql
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -20,7 +20,7 @@ def create_comtrade(tablename):
 			Column('trade_flow_code',Integer),
 			Column('trade_flow',String(255)),
 			Column('commodity_code',mysql.VARCHAR(6)),
-			Column('commodity',String(255)),
+			Column('commodity',Text),
 			Column('reporter_code',Integer),
 			Column('reporter',String(255)),
 			Column('reporter_iso',String(3)),
@@ -84,13 +84,13 @@ def drop_index(tablename,table_list,engine):
 
 		
 def main():
-	table_list = ["comtradehs"+str(i) for i in range(1995,2015)]
+	table_list = ["comtradehs"+str(i) for i in range(2007,2015)]
 	for table in table_list:
 		create_comtrade(table)
 	Base.metadata.create_all(conn)
-	drop_index("conversion_factors",["conversion_factors"],conn)
-	conn.execute("ALTER TABLE conversion_factors DROP id")
-	table_list.append("conversion_factors")
+	#drop_index("conversion_factors",["conversion_factors"],conn)
+	#conn.execute("ALTER TABLE conversion_factors DROP id")
+	#table_list.append("conversion_factors")
 	for table in table_list:
 		drop_index(table,table_list,conn)
 
