@@ -40,6 +40,30 @@ def create_comtrade(tablename):
 		)
 	return Comtrade
 
+	
+	
+def create_mirrorflow(tablename):
+		class MirrorFlow(Base):
+			__tablename__ = tablename
+			__table_args__ = (
+				Column('id',Integer,primary_key=True),
+				Column('id_m',Integer),
+				Column('id_x',Integer),
+				Column('reporter_iso_m',String(3)),
+				Column('parnter_iso_m',String(3)),
+				Column('reporter_iso_x',String(3)),
+				Column('parnter_iso_x',String(3)),
+				Column('commodity_code',mysql.VARCHAR(6)),
+				Column('classification_m',String(4)),
+				Column('classification_x',String(4)),
+				Column('value_x',Float),
+				Column('value_m',Float),
+				Column('netweight_kg_x',Float),
+				Column('netweight_kg_m',Float),
+				Column('unit_value_x',Float),
+				Column('unit_value_m',Float),
+			)
+	
 class ConversionFactors(Base):
 	
 	def ratio(context):
@@ -49,7 +73,7 @@ class ConversionFactors(Base):
 	
 	__table_args__ = (
 		Column('id',Integer,primary_key=True),
-		Column('commodity',String(255)),
+		Column('commodity',Text),
 		Column('commodity_code',mysql.VARCHAR(6)),
 		Column('reporter_code',Integer),
 		Column('partner_code',Integer),
@@ -84,15 +108,14 @@ def drop_index(tablename,table_list,engine):
 
 		
 def main():
-	table_list = ["comtradehs"+str(i) for i in range(2007,2015)]
+	table_list = ["comtradehs"+str(i) for i in range(1995,2016)]
+	create_mirrorflow("mirrorflow1996")
 	for table in table_list:
 		create_comtrade(table)
 	Base.metadata.create_all(conn)
 	#drop_index("conversion_factors",["conversion_factors"],conn)
 	#conn.execute("ALTER TABLE conversion_factors DROP id")
 	#table_list.append("conversion_factors")
-	for table in table_list:
-		drop_index(table,table_list,conn)
 
 		
 if __name__=="__main__":	

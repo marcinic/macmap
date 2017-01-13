@@ -12,7 +12,7 @@ conn = sa.create_engine("mysql+pymysql://CMARCINIAK:ifpri360@localhost/comtrade?
 
 
 #conn.execute("ALTER TABLE conversion_factors drop id")
-table_list = ["comtradehs"+str(i) for i in range(2001,2015)]
+table_list = ["comtradehs"+str(2015) ] #for i in range(2008,2015)]
 table_dictionary = dict(zip(table_list,list(range(0,20))))
 
 
