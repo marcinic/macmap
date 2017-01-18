@@ -19,9 +19,11 @@ conn = sa.create_engine("mysql+pymysql://CMARCINIAK:ifpri360@localhost/comtrade?
 
 
 Base = declarative_base()
-table = Table("comtradehs1997",Base.metadata,autoload=True,autoload_with=conn)
-mf_table = Table("mirrorflow1997",Base.metadata,autoload=True,autoload_with=conn)
 
+
+
+def get_table(tablename):
+	return Table(tablename,Base.metadata,autoload=True,autoload_with=conn)
 
 def row_count(table):
 	stmt = select([func.count()]).select_from(table)
@@ -63,17 +65,24 @@ def select_trade_flow(table,trade_flow_code):
 	return stmt
 	
 
-def remaining_rows():
-	import_rows = pd.read_sql("select id_m from mirrorflow1997",conn)
-	export_rows = pd.read_sql("select id_x from mirrorflow1997",conn)
+def remaining_rows(source_table,mirrorflow_table):
+	"""
+		Returns tuple of ids from source table that are not present in mirrorflow table
+	"""
+	import_query = select([mirrorflow_table.c.id_m])
+	export_query = select([mirrorflow_table.c.id_x])
+	
+	import_rows = pd.read_sql(import_query,conn)
+	export_rows = pd.read_sql(export_query,conn)
 
-
+	
 	im_rows = np.array(import_rows['id_m'].dropna(),dtype="int64")
 	ex_rows = np.array(export_rows['id_x'].dropna())
 	rows = np.append(im_rows,ex_rows)
 
-
-	ids = [i for i in range(1,7581114)]
+	num_rows = row_count(source_table)
+	
+	ids = [i for i in range(1,num_rows+1)]
 	id_dictionary = {el:0 for el in ids}
 	for row in rows:
 		if row in id_dictionary:
@@ -82,7 +91,7 @@ def remaining_rows():
 	remaining_rows = tuple(id_dictionary.keys())
 	return remaining_rows
 	
-def insert_import_rows(remaining_rows):
+def insert_import_rows(table,mf_table,remaining_rows):
 	print("inserting_rows")
 	select_query = select( [table.c.id,
 			table.c.commodity_code,
@@ -111,7 +120,7 @@ def insert_import_rows(remaining_rows):
 	
 	
 	
-def mirror_flow(tablename):
+def mirror_flow(tablename,output_table):
 	""" 
 		Iterate through the exports in a table. 
 		Merge with imports and write to MySQL 
@@ -144,19 +153,28 @@ def mirror_flow(tablename):
 			right_on=['commodity_code','reporter_iso','partner_iso'], 
 			suffixes=('_m','_x'))
 		print("inserting into database")
-		m.to_sql("mirrorflow1998",conn,if_exists="append",index=False)
+		m.to_sql(output_table,conn,if_exists="append",index=False)
 		i = i+1
 		
-		
+
+def main():
+#	tables = [get_table("comtradehs"+str(i)) for i in range(1995,2016)]
+	for i in range(1995,2016):
+		table = get_table("comtradehs"+str(i))
+		mf_tablename = "mirrorflow"+str(i)
+		print("creating mirrorflow table")
+		mirror_flow(table,mf_tablename)
+		mf_table = get_table(mf_tablename)
+		rows = remaining_rows(table,mf_table)
+		row = chunks(rows,100000)
+		print("inserting remaining rows")
+		for r in row:
+			insert_import_rows(table,mf_table,tuple(r))	
+			
 		
 if __name__=="__main__":
 	start = time.time()
-	rows = remaining_rows()
-	row = chunks(rows,100000)
-	for r in row:
-		insert_import_rows(tuple(r))
-	#print(len(rows))
-	#insert_import_rows(rows[0:1000])	
+	main()
 	end = time.time()
 	print(str(end-start)+" seconds")
 		
