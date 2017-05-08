@@ -31,11 +31,11 @@ def output_file(filename,res,output_dir):
 
 
 def main():
-	output_dir = "D:/Users/cmarciniak/Documents/macmap/data/comtrade"
+	output_dir = "C:/Users/CMARCINIAK/Documents/macmap/data/comtrade"
 	f = open("comtrade_token.txt")
 	token = f.read()
 	#years = [str(year) for year in range(1995,2016)]
-	years = ["2015"]
+	years = ["2016"]
 	for year in years:
 		url = make_url("C","A",year,"ALL","HS",token)
 		res = requests.get(url)
