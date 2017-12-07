@@ -44,13 +44,13 @@ def chunk(num_rows):
 			chunks.append(num_rows)
 	return chunks
 
-	
+
 def chunks(l, n):
     # For item i in a range that is a length of l,
     for i in range(0, len(l), n):
         # Create an index range for l of n items:
-        yield l[i:i+n]	
-	
+        yield l[i:i+n]
+
 
 def select_trade_flow(table,trade_flow_code):
 	""" Returns SQLAlchemy statement for trade flows of a given type"""
@@ -63,7 +63,7 @@ def select_trade_flow(table,trade_flow_code):
 	table.c.netweight_kg,
 	table.c.unit_value]).where(table.c.trade_flow_code==trade_flow_code)
 	return stmt
-	
+
 
 def remaining_rows(source_table,mirrorflow_table):
 	"""
@@ -71,17 +71,17 @@ def remaining_rows(source_table,mirrorflow_table):
 	"""
 	import_query = select([mirrorflow_table.c.id_m])
 	export_query = select([mirrorflow_table.c.id_x])
-	
+
 	import_rows = pd.read_sql(import_query,conn)
 	export_rows = pd.read_sql(export_query,conn)
 
-	
+
 	im_rows = np.array(import_rows['id_m'].dropna(),dtype="int64")
 	ex_rows = np.array(export_rows['id_x'].dropna())
 	rows = np.append(im_rows,ex_rows)
 
 	num_rows = row_count(source_table)
-	
+
 	ids = [i for i in range(1,num_rows+1)]
 	id_dictionary = {el:0 for el in ids}
 	for row in rows:
@@ -90,7 +90,7 @@ def remaining_rows(source_table,mirrorflow_table):
 
 	remaining_rows = tuple(id_dictionary.keys())
 	return remaining_rows
-	
+
 def insert_import_rows(table,mf_table,remaining_rows):
 	print("inserting_rows")
 	select_query = select( [table.c.id,
@@ -102,7 +102,7 @@ def insert_import_rows(table,mf_table,remaining_rows):
 			table.c.netweight_kg,
 			table.c.unit_value],table.c.id.in_(remaining_rows))
 
-	insert_query = insert(mf_table).from_select( 
+	insert_query = insert(mf_table).from_select(
 		(mf_table.c.id_m,
 		mf_table.c.commodity_code,
 		mf_table.c.reporter_iso_m,
@@ -113,33 +113,33 @@ def insert_import_rows(table,mf_table,remaining_rows):
 		mf_table.c.unit_value_m
 		),select_query
 	)
-	
+
 	conn.execute(insert_query)
 
-	
-	
-	
-	
+
+
+
+
 def mirror_flow(tablename,output_table):
-	""" 
-		Iterate through the exports in a table. 
-		Merge with imports and write to MySQL 
+	"""
+		Iterate through the exports in a table.
+		Merge with imports and write to MySQL
 	"""
 	Base = declarative_base()
 	table = Table(tablename,Base.metadata,autoload=True,autoload_with=conn)
-	
+
 	select([func.count()]).select_from(table)
-	
+
 	print("importing imports")
 	import_query = select_trade_flow(table,1)
 	imports = pd.read_sql(import_query,conn)
-	
-	
-	
+
+
+
 	table_length = row_count(table)
 	chunks = chunk(table_length)
-	
-	
+
+
 	export_query = select_trade_flow(table,2)
 	i = 0
 	while i < len(chunks)-1:
@@ -147,19 +147,19 @@ def mirror_flow(tablename,output_table):
 		exp_q = export_query.where(between(table.c.id,chunks[i]+1,chunks[i+1]))
 		exports = pd.read_sql(exp_q,conn)
 		print("merging")
-		m = imports.merge(exports, 
+		m = imports.merge(exports,
 			how='right',
 			left_on=['commodity_code','partner_iso','reporter_iso'],
-			right_on=['commodity_code','reporter_iso','partner_iso'], 
+			right_on=['commodity_code','reporter_iso','partner_iso'],
 			suffixes=('_m','_x'))
 		print("inserting into database")
 		m.to_sql(output_table,conn,if_exists="append",index=False)
 		i = i+1
-		
+
 
 def main():
 #	tables = [get_table("comtradehs"+str(i)) for i in range(1995,2016)]
-	for i in range(1995,2016):
+	for i in range(2015,2016):
 		table = get_table("comtradehs"+str(i))
 		mf_tablename = "mirrorflow"+str(i)
 		print("creating mirrorflow table")
@@ -169,16 +169,11 @@ def main():
 		row = chunks(rows,100000)
 		print("inserting remaining rows")
 		for r in row:
-			insert_import_rows(table,mf_table,tuple(r))	
-			
-		
+			insert_import_rows(table,mf_table,tuple(r))
+
+
 if __name__=="__main__":
 	start = time.time()
 	main()
 	end = time.time()
 	print(str(end-start)+" seconds")
-		
-
-
-
-

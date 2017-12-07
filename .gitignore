@@ -1,6 +1,7 @@
 # Data formats #
 ################
 *.txt
+!requirements.txt
 *.7z
 *.zip
 *.sas7bdat

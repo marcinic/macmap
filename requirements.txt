@@ -1,0 +1,7 @@
+pandas
+pymysql
+sqlalchemy
+requests
+beautifulsoup4
+fuzzywuzzy
+dask

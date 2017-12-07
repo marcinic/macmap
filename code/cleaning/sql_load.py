@@ -2,13 +2,13 @@
 import os
 import re
 import time
-import multiprocessing
+from odo import odo, chunks
 import traceback
 import pandas as pd
 import numpy as np
 import sqlalchemy as sa
-from multiprocessing import Pool
 from sqlalchemy.sql import text
+
 #from nomenclature_conversion import convert
 
 
@@ -37,6 +37,7 @@ def load_to_sql(file):
 		fn = lambda x: x.lower().replace(" ","_").replace("$","").replace("(","").replace(")","")
 		reader = pd.read_table(file,sep=',',dtype="object",chunksize=chunk_size,encoding='utf-8')
 		conn = sa.create_engine("mysql+pymysql://CMARCINIAK:ifpri360@localhost/comtrade?charset=utf8mb4")
+		chnks = odo(file,chunks(pd.DataFrame))
 
 		for chunk in reader:
 			chunk = chunk[chunk.Partner!="World"]
@@ -83,10 +84,10 @@ if __name__=="__main__":
 	inputs = get_inputs(data_dir)
 	#for input in inputs:
 	#	load_to_sql(input)
-	print("loading 2014")
-	load_to_sql(os.path.join(data_dir,"comtradeHS2014.zip"))
-	print("loading 2015")
-	load_to_sql(os.path.join(data_dir,"comtradeHS2015.zip"))
+	#print("loading 2014")
+	#load_to_sql(os.path.join(data_dir,"comtradeHS2014.zip"))
+	#print("loading 2015")
+	#load_to_sql(os.path.join(data_dir,"comtradeHS2015.zip"))
 	print("loading 2016")
 	load_to_sql(os.path.join(data_dir,"comtradeHS2016.zip"))
 	end = time.time()
